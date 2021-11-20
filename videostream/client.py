@@ -36,9 +36,11 @@ class Client:
         self._max_fid = 0
         self._running = True
         while self._running:
+            # Receive a subframe
             data, _ = self._socket.recvfrom(2048)
             result = self.parse_frame_data(data, frames)
             if self._on_recv_callback is not None and result is not None:
+                # If a frame has been assembled, call the callback function
                 self._on_recv_callback(result)
             
             # Check for frames that have been dropped
@@ -57,6 +59,7 @@ class Client:
         SIZE = struct.calcsize("!III")
         fid, i, total = struct.unpack("!III", framedata[:SIZE])
         
+        # Check the validity of the subframe metadata
         if fid not in frames and fid < self._max_fid:
             return
         if fid > self._max_fid:

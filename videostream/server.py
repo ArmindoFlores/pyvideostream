@@ -18,6 +18,7 @@ class Server:
         self._frames.put(frame)
         
     def start(self):
+        # Allow other sockets to share the same port
         flag = socket.SO_REUSEADDR if os.name == "nt" else socket.SO_REUSEPORT
         self._socket.setsockopt(socket.SOL_SOCKET, flag, 1)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -27,6 +28,7 @@ class Server:
         self._running = True        
         while self._running:
             try:
+                # Timeout after 1 second to make sure the loop exit condition is checked
                 frame = self._frames.get(timeout=1)
                 self.send_frame(frame)
                 self._fid += 1

@@ -25,11 +25,13 @@ class ImageEncoder:
         
     def encode(self, image: np.array) -> bytes:
         result: bytes
+        # Encode the image as a JPEG
         if self._compression is not None:
             result = cv2.imencode(".jpg", image, (int(cv2.IMWRITE_JPEG_QUALITY), self._compression))[-1].tobytes()
         else:
             result = cv2.imencode(".jpg", image, (int(cv2.IMWRITE_JPEG_QUALITY), 100))[-1].tobytes()
   
+        # If an encryption key is set, use AES in EAX mode to encrypt the frame
         if self._encryption_key is not None:
             cipher: EaxMode = cast(EaxMode, AES.new(self._encryption_key, AES.MODE_EAX))
             ciphertext, tag = cipher.encrypt_and_digest(result)
@@ -50,6 +52,7 @@ class ImageDecoder:
     def decode(self, image: bytes) -> np.array:
         img_bytes: bytes = image[1:]
         
+        # If an encryption key is set, try to decrypt the image
         if self._encryption_key is not None and image[0] == 1:
             nonce = image[1:17]
             tag = image[17:33]
