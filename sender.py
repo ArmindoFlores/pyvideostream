@@ -1,6 +1,8 @@
+import argparse
 import hashlib
 import logging
 import threading
+from getpass import getpass
 
 import cv2
 
@@ -10,9 +12,32 @@ WINNAME = "Video Display (Sender)"
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.description = "Broadcast video over UDP"
+    parser.add_argument(
+        "--compression-quality", "-c", 
+        type=int, 
+        help="compression quality after JPEG encoding; defaults to 80", 
+        default=80
+    )
+    parser.add_argument(
+        "--encryption-key", "-e",
+        action="store",
+        const="",
+        default=None,
+        nargs="?",
+        help="encrypt messages using this key; leave blank to prompt for the key"
+    )
+    
+    args = parser.parse_args()
+        
     encoder = videostream.ImageEncoder()
-    encoder.set_compression(75)
-    encoder.set_encryption_key(hashlib.sha256(b"mys1mp!3p4s5w0rd").digest())
+    encoder.set_compression(args.compression_quality)
+    
+    if args.encryption_key is not None:
+        if args.encryption_key == "":
+            args.encryption_key = getpass("Enter a password: ")
+        encoder.set_encryption_key(hashlib.sha256(args.encryption_key.encode()).digest())
     
     cam = cv2.VideoCapture(0)
     cv2.namedWindow(WINNAME)

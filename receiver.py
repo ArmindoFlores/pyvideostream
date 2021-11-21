@@ -1,6 +1,8 @@
+import argparse
 import hashlib
 import logging
 import threading
+from getpass import getpass
 
 import cv2
 
@@ -10,8 +12,25 @@ WINNAME = "Video Display (Receiver)"
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.description = "Receive video broadcast over UDP"
+    parser.add_argument(
+        "--encryption-key", "-e",
+        action="store",
+        const="",
+        default=None,
+        nargs="?",
+        help="decrypt messages using this key; leave blank to prompt for the key"
+    )
+    
+    args = parser.parse_args()
+    
     decoder = videostream.ImageDecoder()
-    decoder.set_encryption_key(hashlib.sha256(b"mys1mp!3p4s5w0rd").digest())
+    
+    if args.encryption_key is not None:
+        if args.encryption_key == "":
+            args.encryption_key = getpass("Enter a password: ")
+        decoder.set_encryption_key(hashlib.sha256(args.encryption_key.encode()).digest())
     
     cv2.namedWindow(WINNAME)
     
