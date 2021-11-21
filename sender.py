@@ -28,6 +28,11 @@ def main():
         nargs="?",
         help="encrypt messages using this key; leave blank to prompt for the key"
     )
+    parser.add_argument(
+        "--no-gui", "-g",
+        action="store_true",
+        help="don't display the video being streamed"
+    )
     
     args = parser.parse_args()
         
@@ -40,29 +45,36 @@ def main():
         encoder.set_encryption_key(hashlib.sha256(args.encryption_key.encode()).digest())
     
     cam = cv2.VideoCapture(0)
-    cv2.namedWindow(WINNAME)
+    if not args.no_gui:
+        cv2.namedWindow(WINNAME)
     
     server = videostream.Server()
     server_thread = threading.Thread(target=server.start)
     server_thread.start()
     
-    while True:
-        ret, frame = cam.read()
-        if not ret:
-            break
-        
-        cv2.imshow(WINNAME, frame)
-        
-        frame_data = encoder.encode(frame)
-        server.add_frame(frame_data)
-        
-        key = cv2.waitKey(1)
-        if key % 256 == 27:
-            break
+    try:
+        while True:
+            ret, frame = cam.read()
+            if not ret:
+                break
+            
+            if not args.no_gui:
+                cv2.imshow(WINNAME, frame)
+            
+            frame_data = encoder.encode(frame)
+            server.add_frame(frame_data)
+            
+            if not args.no_gui:
+                key = cv2.waitKey(1)
+                if key % 256 == 27:
+                    break
+    except KeyboardInterrupt:
+        pass
         
     server.stop()
     cam.release()
-    cv2.destroyAllWindows()
+    if not args.no_gui:
+        cv2.destroyAllWindows()
     server_thread.join()
 
 if __name__ == "__main__":
